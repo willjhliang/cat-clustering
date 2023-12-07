@@ -20,7 +20,7 @@ def plot_embeddings(embeddings, labels):
     plt.show()
 
 if __name__ == "__main__":
-    embeddings = load_embeddings("../embeddings/patches.npz")
+    embeddings = load_embeddings("cls_token")
     embeddings, labels, img_paths = embeddings["embeddings"], embeddings["labels"], embeddings["img_paths"]
 
     plot_embeddings(embeddings, labels)

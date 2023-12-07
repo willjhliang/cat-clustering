@@ -1,3 +1,4 @@
+import gc
 
 import torch
 import torch.nn as nn
@@ -27,38 +28,35 @@ class ClusterPatchModel(nn.Module):
     def __init__(self, n_clusters):
         super(ClusterPatchModel, self).__init__()
 
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool2d((2, 2))
-        self.conv1 = nn.Conv2d(1024, 2048, (3, 3), stride=2, padding=1)
-        self.maxpool1 = nn.MaxPool2d((2, 2))
-        self.conv2 = nn.Conv2d(2048, 4096, (3, 3), stride=2, padding=1)
-        self.linear1 = nn.Linear(4096, n_clusters)
-        self.softmax = nn.Softmax(dim=1)
-    
+        self.model_conv = nn.Sequential(
+            nn.Conv2d(1024, 2048, (3, 3), stride=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(2048, 4096, (3, 3), stride=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2))
+        )
+
+        self.model_linear = nn.Sequential(
+            nn.Linear(4096, n_clusters),
+            nn.Softmax(dim=1)
+        )
+        
     def forward(self, x):
-        print(x.shape)
-        x = self.conv1(x)
-        x = self.relu()
-        print(x.shape)
-        x = self.maxpool(x)
-        print(x.shape)
-        x = self.conv2(x)
-        x = self.relu()
-        print(x.shape)
-        x = self.maxpool(x)
-        print(x.shape)
-        x = self.softmax(x)
+        x = self.model_conv(x)
+        x = x.reshape(x.shape[:2])
+        x = self.model_linear(x)
         return x
 
 class EmbeddingDataset(torch.utils.data.Dataset):
-    def __init__(self, embedding_type, embeddings, labels, n_neighbors=10):
+    def __init__(self, embedding_type, embeddings, labels, cls_token, n_neighbors=10):
         super(EmbeddingDataset, self).__init__()
         self.embedding_type = embedding_type
 
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels)
         self.n_neighbors = n_neighbors
-        self.neighbor_indices = get_neighbors(self.embeddings, self.n_neighbors)
+        self.neighbor_indices = get_neighbors(torch.tensor(cls_token), self.n_neighbors)
 
     def __len__(self):
         return len(self.embeddings)
@@ -76,8 +74,8 @@ class EmbeddingDataset(torch.utils.data.Dataset):
     def reshape_embedding(self, embedding):
         if self.embedding_type == "cls_token":
             return embedding
-        elif self.embedding_type == "patch_embeddings":
-            return embedding.reshape(16, 16, 1024)
+        elif self.embedding_type == "patch_tokens":
+            return embedding.reshape(16, 16, 1024).permute(2, 0, 1)
         else:
             raise ValueError("Invalid embedding type")
 

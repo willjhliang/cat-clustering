@@ -136,13 +136,14 @@ def main():
 
     # inputs, labels, paths = load_data("../data", size=None)
 
-    # cls_embeddings = extract_cls(dino, inputs)
+    cls_embeddings, labels, paths = extract_cls(dino, "../data", batch_size=64, data_size=None)
+    np.savez("../embeddings/cls_tokens.npz", embeddings=cls_embeddings, labels=labels, img_paths=paths)
     # masked_patches, masks, all_patches, all_labels, paths = extract_masked_patches(dino, "../data", batch_size=64, data_size=None)
-    all_patches, all_labels, paths = extract_patches(dino, "../data", batch_size=64, data_size=None)
+    # all_patches, all_labels, paths = extract_patches(dino, "../data", batch_size=64, data_size=None)
 
     # Code to save embeddings as npy file
     # np.savez("../embeddings/masked_patches.npz", embeddings=masked_patches, masks=masks, unmasked_embeddings=all_patches, labels=all_labels, img_paths=paths)
-    np.savez("../embeddings/patches.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
+    # np.savez("../embeddings/patches.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
 
 
 

@@ -1,3 +1,4 @@
+import gc
 
 import torch
 import torch.nn as nn
@@ -55,13 +56,12 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
             epoch_precisions.append(precision)
             epoch_recalls.append(recall)
 
-        if epoch % 25 == 0:
-            print(f"Epoch {epoch}")
-            print(f"Loss: {np.mean(epoch_losses)}")
-            print(f"Accuracy: {np.mean(epoch_accuracies)}")
-            print(f"Precision: {np.mean(epoch_precisions)}")
-            print(f"Recall: {np.mean(epoch_recalls)}")
-            print()
+        print(f"Epoch {epoch}")
+        print(f"Loss: {np.mean(epoch_losses)}")
+        print(f"Accuracy: {np.mean(epoch_accuracies)}")
+        print(f"Precision: {np.mean(epoch_precisions)}")
+        print(f"Recall: {np.mean(epoch_recalls)}")
+        print()
 
     return model
 
@@ -83,6 +83,12 @@ def run(cfg):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     embeddings, labels = load_embeddings(embedding_type)
+    labels = labels.astype(np.int8)
+    cls_token, _ = load_embeddings("cls_token")
+    del _
+    gc.collect()
+    print(cls_token.shape)
+    # embeddings, labels = embeddings[:512], labels[:512]
 
     # mask = f(np.argmax(labels, axis=1), 200)
     # embeddings_alt = embeddings[mask]
@@ -97,7 +103,10 @@ def run(cfg):
         raise NotImplementedError
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    dataset = EmbeddingDataset(embedding_type, embeddings, labels, n_neighbors=n_neighbors)
+    dataset = EmbeddingDataset(embedding_type, embeddings, labels, cls_token, n_neighbors=n_neighbors)
+    del embeddings
+    del cls_token
+    gc.collect()
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     criterion = SCANLoss()
 

@@ -116,7 +116,7 @@ def load_embeddings(embedding_type):
     if embedding_type == "cls_token":
         filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/cls_tokens.npz"
     elif embedding_type == "patch_tokens":
-        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/patches.npz"
+        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/patch_tokens.npz"
     elif embedding_type == "soft_mask_patch_tokens":
         filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/soft_mask_patch_tokens.npz"
     embeddings = np.load(filename)
