@@ -25,31 +25,35 @@ class ClusterModel(nn.Module):
 
 class ClusterPatchModel(nn.Module):
     def __init__(self, n_clusters):
-        super(ClusterModel, self).__init__()
+        super(ClusterPatchModel, self).__init__()
 
-        self.conv1 = nn.Conv2D(1024, 2048, (3, 3), stride=2, padding=1)
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool2d((2, 2))
+        self.conv1 = nn.Conv2d(1024, 2048, (3, 3), stride=2, padding=1)
         self.maxpool1 = nn.MaxPool2d((2, 2))
-        self.conv2 = nn.Conv2D(2048, 4096, (3, 3), stride=2, padding=1)
-        self.maxpool2 = nn.MaxPool2d((2, 2))
+        self.conv2 = nn.Conv2d(2048, 4096, (3, 3), stride=2, padding=1)
         self.linear1 = nn.Linear(4096, n_clusters)
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
         print(x.shape)
         x = self.conv1(x)
+        x = self.relu()
         print(x.shape)
-        x = self.maxpool1(x)
+        x = self.maxpool(x)
         print(x.shape)
         x = self.conv2(x)
+        x = self.relu()
         print(x.shape)
-        x = self.maxpool2(x)
+        x = self.maxpool(x)
         print(x.shape)
         x = self.softmax(x)
         return x
 
 class EmbeddingDataset(torch.utils.data.Dataset):
-    def __init__(self, embeddings, labels, n_neighbors=10):
+    def __init__(self, embedding_type, embeddings, labels, n_neighbors=10):
         super(EmbeddingDataset, self).__init__()
+        self.embedding_type = embedding_type
 
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels)
@@ -62,12 +66,20 @@ class EmbeddingDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         neighbor_idx = np.random.choice(self.neighbor_indices[idx])
 
-        embedding = self.embeddings[idx]
-        neighbor = self.embeddings[neighbor_idx]
+        embedding = self.reshape_embedding(self.embeddings[idx])
+        neighbor = self.reshape_embedding(self.embeddings[neighbor_idx])
         embedding_label = self.labels[idx]
         neighbor_label = self.labels[neighbor_idx]
 
         return embedding, neighbor, embedding_label, neighbor_label
+    
+    def reshape_embedding(self, embedding):
+        if self.embedding_type == "cls_token":
+            return embedding
+        elif self.embedding_type == "patch_embeddings":
+            return embedding.reshape(16, 16, 1024)
+        else:
+            raise ValueError("Invalid embedding type")
 
 
 class SCANLoss(nn.Module):

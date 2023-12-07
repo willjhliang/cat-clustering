@@ -6,7 +6,7 @@ import numpy as np
 import hydra
 from tqdm import tqdm
 
-from core import ClusterModel, SCANLoss, EmbeddingDataset
+from core import ClusterModel, ClusterPatchModel, SCANLoss, EmbeddingDataset
 from utils import load_embeddings, normalize_embeddings, get_neighbors, save_model, save_output
 
 from hydra.utils import get_original_cwd, to_absolute_path
@@ -78,40 +78,40 @@ def run(cfg):
     epochs = cfg.epochs
     lr = cfg.lr
     batch_size = cfg.batch_size
+    embedding_type = cfg.embedding_type
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    filename = get_original_cwd() + "/../embeddings/cls_tokens.npz"
-    embeddings, labels = load_embeddings(filename)
+    embeddings, labels = load_embeddings(embedding_type)
 
     # mask = f(np.argmax(labels, axis=1), 200)
     # embeddings_alt = embeddings[mask]
     # labels_alt = labels[mask]
 
-    # full_dataset = EmbeddingDataset(embeddings, labels, n_neighbors=n_neighbors)
-    # full_dataloader = DataLoader(full_dataset, batch_size=batch_size, shuffle=True)
+    model = None
+    if embedding_type == "cls_token":
+        model = ClusterModel(n_clusters=n_clusters).to(device)
+    elif embedding_type == "patch_tokens":
+        model = ClusterPatchModel(n_clusters=n_clusters).to(device)
+    else:
+        raise NotImplementedError
 
-    model = ClusterModel(n_clusters=n_clusters).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    dataset = EmbeddingDataset(embeddings, labels, n_neighbors=n_neighbors)
+    dataset = EmbeddingDataset(embedding_type, embeddings, labels, n_neighbors=n_neighbors)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     criterion = SCANLoss()
 
     model = train_clustering(model, dataloader, optimizer, criterion, labels, epochs=epochs)
     save_model(model)
 
-    embeddings = []
     preds = []
-    labels = []
-    for batch_idx, (cur_embeddings, _, cur_labels, _) in enumerate(dataloader):
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    for _, (cur_embeddings, _, _, _) in enumerate(dataloader):
         cur_embeddings = cur_embeddings.to(device)
         preds.append(model(cur_embeddings).detach().cpu())
-        labels.append(cur_labels.detach().cpu())
-        embeddings.append(cur_embeddings.detach().cpu())
 
     preds = np.concatenate(preds, axis=0)
-    labels = np.concatenate(labels, axis=0)
-    embeddings = np.concatenate(embeddings, axis=0)
-    save_output(embeddings, preds, labels)
+    save_output(preds)
 
 
 if __name__ == "__main__":

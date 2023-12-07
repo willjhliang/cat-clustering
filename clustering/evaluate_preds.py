@@ -3,7 +3,7 @@ from sklearn import metrics
 from scipy import optimize
 import sys
 
-from utils import plot_correctness, load_output
+from utils import plot_correctness, load_embeddings, load_predictions
 
 def evaluate_preds(embeddings, labels, preds):
     labels, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
@@ -33,7 +33,10 @@ def evaluate_preds(embeddings, labels, preds):
     plot_correctness(embeddings, labels, preds_arg, match)
 
 if __name__ == "__main__":
-    output_filename = sys.argv[1]
-    output = load_output(output_filename)
-    embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
+    embedding_type = sys.argv[1]
+    preds_filename = sys.argv[2]
+    # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
+    embeddings, labels = load_embeddings(embedding_type)
+    preds = load_predictions(preds_filename)
+    # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

@@ -112,18 +112,25 @@ def load_dino():
     dino.to(device)
     return dino
 
-def load_embeddings(filename="../embeddings/cls_tokens.npz"):
+def load_embeddings(embedding_type):
+    if embedding_type == "cls_token":
+        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/cls_tokens.npz"
+    elif embedding_type == "patch_tokens":
+        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/patches.npz"
+    elif embedding_type == "soft_mask_patch_tokens":
+        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/soft_mask_patch_tokens.npz"
     embeddings = np.load(filename)
-    return embeddings
+    return embeddings["embeddings"], embeddings["labels"]
 
-    return embeddings, labels
+def load_predictions(filename):
+    return np.load(filename)
 
 def normalize_embeddings(embeddings):
     row_norms = np.linalg.norm(embeddings, axis=1, ord=2)
     return embeddings / row_norms[:, np.newaxis]
 
-
 def get_neighbors(embeddings, n_neighbors):
+    embeddings = embeddings.reshape(embeddings.shape[0], -1)
     similarities = pairwise_cosine_similarity(embeddings)
     neighbors = np.empty((embeddings.shape[0], n_neighbors))
     for i, row in enumerate(similarities):
@@ -136,11 +143,8 @@ def save_model(model):
 def load_model(model, filename):
     model.load_state_dict(torch.load(filename))
 
-def save_output(embeddings, preds, labels):
-    np.savez("output.npz", embeddings=embeddings, preds=preds, labels=labels)
-
-def load_output(filename):
-    return np.load(filename)
+def save_output(preds):
+    np.save("predictions.npy", preds)
 
 def to_onehot(labels):
     onehot = np.zeros((labels.size, labels.max() + 1))

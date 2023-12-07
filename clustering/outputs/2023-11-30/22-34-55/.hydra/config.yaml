@@ -1,6 +1,0 @@
-n_clusters: 5
-n_neighbors: 10
-epochs: 100
-lr: 0.0001
-batch_size: 64
-hydra.job.chdir: true
