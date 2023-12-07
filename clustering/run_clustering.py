@@ -65,6 +65,12 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
 
     return model
 
+def f(a,N):
+    mask = np.empty(a.size,bool)
+    mask[:N] = True
+    np.not_equal(a[N:],a[:-N],out=mask[N:])
+    return mask
+
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def run(cfg):
     n_clusters = cfg.n_clusters
@@ -76,6 +82,13 @@ def run(cfg):
 
     filename = get_original_cwd() + "/../embeddings/cls_tokens.npz"
     embeddings, labels = load_embeddings(filename)
+
+    # mask = f(np.argmax(labels, axis=1), 200)
+    # embeddings_alt = embeddings[mask]
+    # labels_alt = labels[mask]
+
+    # full_dataset = EmbeddingDataset(embeddings, labels, n_neighbors=n_neighbors)
+    # full_dataloader = DataLoader(full_dataset, batch_size=batch_size, shuffle=True)
 
     model = ClusterModel(n_clusters=n_clusters).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

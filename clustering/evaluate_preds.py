@@ -7,7 +7,13 @@ from utils import plot_correctness, load_output
 
 def evaluate_preds(embeddings, labels, preds):
     labels, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
-    top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
+    # top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
+    # print(preds.shape)
+    # preds_arg = np.random.random_sample(preds_arg.shape)
+    # preds_arg = preds_arg * (preds.shape[1])
+    # print(preds_arg)
+    # preds_arg = preds_arg.astype(int)
+    # print(preds_arg)
 
     cost = metrics.confusion_matrix(preds_arg, labels)
     _, assignments = optimize.linear_sum_assignment(cost, maximize=True)
@@ -15,9 +21,16 @@ def evaluate_preds(embeddings, labels, preds):
         preds_arg[i] = assignments[preds_arg[i]]
     match = labels == preds_arg
 
+    total = 0
+    n_clusters = preds_arg.max() + 1
+    for i in range(n_clusters):
+        true_mask = labels == i
+        total += preds_arg[true_mask & match].shape[0] / np.sum(true_mask) / n_clusters
+    print(f"Accuracy (weighted): {total}")
+
     print(f"Accuracy: {np.sum(match) / match.shape[0]}")
 
-    plot_correctness(embeddings, labels, preds_arg, match, top)
+    plot_correctness(embeddings, labels, preds_arg, match)
 
 if __name__ == "__main__":
     output_filename = sys.argv[1]

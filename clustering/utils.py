@@ -1,10 +1,48 @@
 import numpy as np
 import torch
 from torchmetrics.functional import pairwise_cosine_similarity
+from torchvision import transforms as T
 from sklearn import metrics
 from sklearn.manifold import TSNE
 from scipy import optimize
 import matplotlib.pyplot as plt
+from PIL import Image, ExifTags
+
+def open_image(path):
+    image = Image.open(path)
+
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation]=='Orientation':
+                break
+        
+        exif = image._getexif()
+        if exif[orientation] == 3:
+            image = image.rotate(180, expand=True)
+        elif exif[orientation] == 6:
+            image = image.rotate(270, expand=True)
+        elif exif[orientation] == 8:
+            image = image.rotate(90, expand=True)
+    except:
+        pass
+
+    return image
+
+def get_transform(normalize=True):
+    transform = T.Compose([
+        T.Resize(224),
+        T.CenterCrop(224),
+        T.ToTensor(),
+        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)) if normalize else lambda x: x
+    ])
+    return transform
+
+def load_image(path, normalize=True):
+    transform = get_transform(normalize=normalize)
+    img = open_image(path)
+    img_tensor = transform(img)
+
+    return img_tensor
 
 
 def plot_correctness(embeddings, labels_true, labels_pred, match, top=None):    
@@ -65,19 +103,6 @@ def plot_confident_correctness(embeddings, labels_true, labels_pred, match):
     plt.show()
 
 
-def plot_embeddings(embeddings, labels):
-    embeddings = normalize_embeddings(embeddings)
-
-    tsne = TSNE(n_components=2, perplexity=5, random_state=42)
-    output = tsne.fit_transform(embeddings)
-
-    if (labels.ndim > 1):
-        label_colors = np.argmax(labels, axis=1)
-    else:
-        label_colors = labels
-    print(label_colors)
-    plt.scatter(output[:, 0], output[:, 1], c=label_colors)
-    plt.show()
 
 def load_dino():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,10 +113,8 @@ def load_dino():
     return dino
 
 def load_embeddings(filename="../embeddings/cls_tokens.npz"):
-    embeddings_file = np.load(filename)
-    embeddings = embeddings_file["embeddings"]
-    labels = embeddings_file["labels"]
-    embeddings_file.close()
+    embeddings = np.load(filename)
+    return embeddings
 
     return embeddings, labels
 

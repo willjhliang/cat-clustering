@@ -9,11 +9,41 @@ class ClusterModel(nn.Module):
     def __init__(self, n_clusters):
         super(ClusterModel, self).__init__()
 
-        self.linear = nn.Linear(1024, n_clusters)
+        # self.linear1 = nn.Linear(1024, 1024)
+        # self.relu1 = nn.ReLU()
+        # self.dropout1 = nn.Dropout(p=0.5)
+        self.linear2 = nn.Linear(1024, n_clusters)
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
-        x = self.linear(x)
+        # x = self.linear1(x)
+        # x = self.relu1(x)
+        # x = self.dropout1(x)
+        x = self.linear2(x)
+        x = self.softmax(x)
+        return x
+
+class ClusterPatchModel(nn.Module):
+    def __init__(self, n_clusters):
+        super(ClusterModel, self).__init__()
+
+        self.conv1 = nn.Conv2D(1024, 2048, (3, 3), stride=2, padding=1)
+        self.maxpool1 = nn.MaxPool2d((2, 2))
+        self.conv2 = nn.Conv2D(2048, 4096, (3, 3), stride=2, padding=1)
+        self.maxpool2 = nn.MaxPool2d((2, 2))
+        self.linear1 = nn.Linear(4096, n_clusters)
+        self.softmax = nn.Softmax(dim=1)
+    
+    def forward(self, x):
+        print(x.shape)
+        x = self.conv1(x)
+        print(x.shape)
+        x = self.maxpool1(x)
+        print(x.shape)
+        x = self.conv2(x)
+        print(x.shape)
+        x = self.maxpool2(x)
+        print(x.shape)
         x = self.softmax(x)
         return x
 
@@ -23,7 +53,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
 
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels)
-        self.n_neighbors = 10
+        self.n_neighbors = n_neighbors
         self.neighbor_indices = get_neighbors(self.embeddings, self.n_neighbors)
 
     def __len__(self):
