@@ -11,3 +11,5 @@ dist/
 .vscode/
 
 .DS_STORE
+
+embeddings/

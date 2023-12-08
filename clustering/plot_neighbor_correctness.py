@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 
 from utils import load_embeddings
 
-device = torch.device("cuda")
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+device = torch.device(device)
 
 def get_neighbor_correctness(embeddings, labels, max_neighbors=50):
     similarities = pairwise_cosine_similarity(embeddings)

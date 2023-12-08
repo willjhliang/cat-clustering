@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+import argparse
 
 from utils import normalize_embeddings, load_embeddings
 
@@ -20,7 +21,9 @@ def plot_embeddings(embeddings, labels):
     plt.show()
 
 if __name__ == "__main__":
-    embeddings = load_embeddings("cls_token")
-    embeddings, labels, img_paths = embeddings["embeddings"], embeddings["labels"], embeddings["img_paths"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", "--embedding_type", type=str)
+    args = parser.parse_args()
 
+    embeddings, labels = load_embeddings(args.embedding_type)
     plot_embeddings(embeddings, labels)

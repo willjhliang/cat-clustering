@@ -7,6 +7,10 @@ from sklearn.manifold import TSNE
 from scipy import optimize
 import matplotlib.pyplot as plt
 from PIL import Image, ExifTags
+import os
+
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+device = torch.device(device)
 
 def open_image(path):
     image = Image.open(path)
@@ -105,8 +109,6 @@ def plot_confident_correctness(embeddings, labels_true, labels_pred, match):
 
 
 def load_dino():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14_reg')
     dino.eval()
     dino.to(device)
@@ -114,11 +116,11 @@ def load_dino():
 
 def load_embeddings(embedding_type):
     if embedding_type == "cls_token":
-        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/cls_tokens.npz"
+        filename = "../embeddings/cls_tokens.npz"
     elif embedding_type == "patch_tokens":
-        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/patch_tokens.npz"
+        filename = "../embeddings/patch_tokens.npz"
     elif embedding_type == "soft_mask_patch_tokens":
-        filename = "/home/danielx/Documents/homework/cis5810/clustering/embeddings/soft_mask_patch_tokens.npz"
+        filename = "../embeddings/soft_mask_patch_tokens.npz"
     embeddings = np.load(filename)
     return embeddings["embeddings"], embeddings["labels"]
 
@@ -137,14 +139,25 @@ def get_neighbors(embeddings, n_neighbors):
         neighbors[i] = torch.topk(row, k=n_neighbors).indices.cpu().numpy()
     return neighbors.astype(int)
 
-def save_model(model):
-    torch.save(model.state_dict(), f"model.pt")
+def save_model(model, save_dir=""):
+    torch.save(model.state_dict(), f"{save_dir}/model.pt")
 
 def load_model(model, filename):
     model.load_state_dict(torch.load(filename))
 
-def save_output(preds):
-    np.save("predictions.npy", preds)
+def save_output(preds, save_dir=""):
+    np.save(f"{save_dir}/predictions.npy", preds)
+
+def save_img(img, filepath=""):
+    if isinstance(img, np.ndarray):
+        if img.max() <= 1:
+            img = (img * 255).astype(np.uint8)
+        img = Image.fromarray(img)
+
+    dirpath = os.path.dirname(filepath)
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+    img.save(filepath)
 
 def to_onehot(labels):
     onehot = np.zeros((labels.size, labels.max() + 1))

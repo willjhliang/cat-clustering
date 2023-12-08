@@ -2,6 +2,7 @@ import numpy as np
 from sklearn import metrics
 from scipy import optimize
 import sys
+import argparse
 
 from utils import plot_correctness, load_embeddings, load_predictions
 
@@ -26,17 +27,19 @@ def evaluate_preds(embeddings, labels, preds):
     for i in range(n_clusters):
         true_mask = labels == i
         total += preds_arg[true_mask & match].shape[0] / np.sum(true_mask) / n_clusters
-    print(f"Accuracy (weighted): {total}")
 
+    print(f"Accuracy (weighted): {total}")
     print(f"Accuracy: {np.sum(match) / match.shape[0]}")
 
-    plot_correctness(embeddings, labels, preds_arg, match)
+    # plot_correctness(embeddings, labels, preds_arg, match)
 
 if __name__ == "__main__":
-    embedding_type = sys.argv[1]
-    preds_filename = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", "--embedding_type", type=str)
+    parser.add_argument("-f", "--filename", type=str)
+    args = parser.parse_args()
     # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
-    embeddings, labels = load_embeddings(embedding_type)
-    preds = load_predictions(preds_filename)
+    embeddings, labels = load_embeddings(args.embedding_type)
+    preds = load_predictions(args.preds_filename)
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

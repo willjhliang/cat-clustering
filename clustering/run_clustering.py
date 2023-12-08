@@ -12,7 +12,9 @@ from utils import load_embeddings, normalize_embeddings, get_neighbors, save_mod
 
 from hydra.utils import get_original_cwd, to_absolute_path
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+device = torch.device(device)
+
 
 def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
     """
@@ -25,7 +27,7 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
     """
 
     model.train()
-    for epoch in range(epochs+1):
+    for epoch in tqdm(range(epochs+1)):
         epoch_losses = []
         epoch_accuracies = []
         epoch_precisions = []
@@ -56,12 +58,13 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
             epoch_precisions.append(precision)
             epoch_recalls.append(recall)
 
-        print(f"Epoch {epoch}")
-        print(f"Loss: {np.mean(epoch_losses)}")
-        print(f"Accuracy: {np.mean(epoch_accuracies)}")
-        print(f"Precision: {np.mean(epoch_precisions)}")
-        print(f"Recall: {np.mean(epoch_recalls)}")
-        print()
+        if epoch % 25 == 0:
+            print(f"Epoch {epoch}")
+            print(f"Loss: {np.mean(epoch_losses)}")
+            print(f"Accuracy: {np.mean(epoch_accuracies)}")
+            print(f"Precision: {np.mean(epoch_precisions)}")
+            print(f"Recall: {np.mean(epoch_recalls)}")
+            print()
 
     return model
 
@@ -73,21 +76,21 @@ def f(a,N):
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def run(cfg):
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+
     n_clusters = cfg.n_clusters
     n_neighbors = cfg.n_neighbors
     epochs = cfg.epochs
     lr = cfg.lr
     batch_size = cfg.batch_size
+    loss = cfg.loss
     embedding_type = cfg.embedding_type
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     embeddings, labels = load_embeddings(embedding_type)
     labels = labels.astype(np.int8)
     cls_token, _ = load_embeddings("cls_token")
     del _
     gc.collect()
-    print(cls_token.shape)
     # embeddings, labels = embeddings[:512], labels[:512]
 
     # mask = f(np.argmax(labels, axis=1), 200)
@@ -108,10 +111,15 @@ def run(cfg):
     del cls_token
     gc.collect()
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    criterion = SCANLoss()
+    if loss == "scan":
+        criterion = SCANLoss()
+    elif loss == "supervised":
+        criterion = nn.CrossEntropyLoss()
+    else:
+        raise NotImplementedError
 
     model = train_clustering(model, dataloader, optimizer, criterion, labels, epochs=epochs)
-    save_model(model)
+    save_model(model, save_dir=output_dir)
 
     preds = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -120,7 +128,7 @@ def run(cfg):
         preds.append(model(cur_embeddings).detach().cpu())
 
     preds = np.concatenate(preds, axis=0)
-    save_output(preds)
+    save_output(preds, save_dir=output_dir)
 
 
 if __name__ == "__main__":

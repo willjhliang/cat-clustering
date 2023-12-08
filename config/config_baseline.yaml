@@ -1,9 +1,10 @@
 
 n_clusters: 16
+embedding_type: "cls_token"  # Check config.yaml for options
 
 hydra:
-  job:
-    chdir: True
+  # job:
+  #   chdir: True
   
   run:
     dir: ./outputs_baseline/${now:%Y-%m-%d}/${now:%H-%M-%S}

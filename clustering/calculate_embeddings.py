@@ -10,7 +10,8 @@ from tqdm import tqdm
 
 from utils import *
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+device = torch.device(device)
 
 def load_data(dir, size=None):
     paths = []
@@ -136,8 +137,8 @@ def main():
 
     # inputs, labels, paths = load_data("../data", size=None)
 
-    cls_embeddings, labels, paths = extract_cls(dino, "../data", batch_size=64, data_size=None)
-    np.savez("../embeddings/cls_tokens.npz", embeddings=cls_embeddings, labels=labels, img_paths=paths)
+    # cls_embeddings, labels, paths = extract_cls(dino, "../data", batch_size=64, data_size=None)
+    # np.savez("../embeddings/cls_tokens.npz", embeddings=cls_embeddings, labels=labels, img_paths=paths)
     # masked_patches, masks, all_patches, all_labels, paths = extract_masked_patches(dino, "../data", batch_size=64, data_size=None)
     # all_patches, all_labels, paths = extract_patches(dino, "../data", batch_size=64, data_size=None)
 
@@ -151,81 +152,86 @@ def main():
 
     # SCRATCH CODE STARTS HERE
 
-    # dirpath = "../data"
-    # for subdir, _, files in os.walk(dirpath):
-    #     paths = [os.path.join(subdir, file) for file in files]
-    # paths = np.random.choice(paths, 100, replace=False)
+    dirpath = "../data"
+    paths = []
+    for subdir, _, files in os.walk(dirpath):
+        paths.extend([os.path.join(subdir, file) for file in files])
+    paths = np.random.choice(paths, 10, replace=False)
 
-    # imgs = [load_image(path) for path in paths]
-    # data = torch.stack(imgs)
+    imgs = [load_image(path) for path in paths]
+    data = torch.stack(imgs)
+    print(data.shape)
 
-    # ##################################################################
-    # batch_size = 64
-    # num_data = data.shape[0]
-    # num_batches = (num_data + batch_size - 1) // batch_size
+    ##################################################################
+    batch_size = 64
+    num_data = data.shape[0]
+    num_batches = (num_data + batch_size - 1) // batch_size
 
-    # # initialize an empty array to store the predictions
-    # all_predictions = []
+    # initialize an empty array to store the predictions
+    all_predictions = []
 
-    # # process the data in batches1
-    # for batch_index in tqdm(range(num_batches)):
-    #     start = batch_index * batch_size
-    #     end = min((batch_index + 1) * batch_size, num_data)
-    #     batch_inputs = data[start:end].to(device)
+    # process the data in batches1
+    for batch_index in tqdm(range(num_batches)):
+        start = batch_index * batch_size
+        end = min((batch_index + 1) * batch_size, num_data)
+        batch_inputs = data[start:end].to(device)
 
-    #     # run predictions on the current batch
-    #     with torch.no_grad():
-    #         # batch_predictions = dino(batch_inputs).detach().cpu().numpy()
-    #         batch_predictions = dino.forward_features(batch_inputs)["x_norm_patchtokens"].detach().cpu().numpy()
+        # run predictions on the current batch
+        with torch.no_grad():
+            # batch_predictions = dino(batch_inputs).detach().cpu().numpy()
+            batch_predictions = dino.forward_features(batch_inputs)["x_norm_patchtokens"].detach().cpu().numpy()
 
-    #     all_predictions.append(batch_predictions)
+        all_predictions.append(batch_predictions)
 
-    # # concatenate the predictions from all batches
-    # predictions = np.concatenate(all_predictions, axis=0)
-    # ##################################################################
+    # concatenate the predictions from all batches
+    predictions = np.concatenate(all_predictions, axis=0)
+    ##################################################################
 
-    # features = predictions
-    # flattened_features = np.reshape(features, (-1, 1024))
+    features = predictions
+    flattened_features = np.reshape(features, (-1, 1024))
 
-    # pca = PCA(n_components=3)
-    # pca.fit(flattened_features)
-    # pca_features = pca.transform(flattened_features)
-    # pca_features = np.reshape(pca_features, (-1, 256, 3))
+    pca = PCA(n_components=3)
+    pca.fit(flattened_features)
+    pca_features = pca.transform(flattened_features)
+    pca_features = np.reshape(pca_features, (-1, 256, 3))
 
     # pca_features = (pca_features - pca_features[:, :, 0].min()) / (pca_features[:, :, 0].max() - pca_features[:, :, 0].min())
 
-    # for i, path in enumerate(paths):
-    #     print(path)
-    #     cur_pca_features = pca_features[i]
+    for i, path in enumerate(paths):
+        cur_pca_features = pca_features[i]
 
-    #     mask = cur_pca_features[:, 0].reshape(16, 16)
-    #     # mask = (mask - mask.min()) / (mask.max() - mask.min())
-    #     # mask = cur_pca_features[:, 0] < 0.67
-    #     pca_mask = mask
-    #     img_mask = mask.repeat(14, axis=0).repeat(14, axis=1)
+        mask = cur_pca_features[:, 0].reshape(16, 16)
+        mask = (mask - mask.min()) / (mask.max() - mask.min())  # Per-image normalization
+        # mask = cur_pca_features[:, 0] < 0.67
+        pca_mask = mask
+        img_mask = mask.repeat(14, axis=0).repeat(14, axis=1)
 
-    #     # For visualization purposes only, to display full RGB spectrum
-    #     cur_pca_features = (cur_pca_features - cur_pca_features.min()) / (cur_pca_features.max() - cur_pca_features.min())
+        # For visualization purposes only, to display full RGB spectrum
+        cur_pca_features = (cur_pca_features - cur_pca_features.min()) / (cur_pca_features.max() - cur_pca_features.min())
 
-    #     # Plot figure
-    #     fig = plt.figure()
+        # Plot figure
+        fig = plt.figure()
 
-    #     fig.add_subplot(1, 2, 1)
-    #     cur_pca_features = cur_pca_features.reshape(16, 16, 3)
-    #     # cur_pca_features[pca_mask, :] = 0
-    #     for i in range(3):
-    #         cur_pca_features[:, :, i] *= pca_mask
-    #     plt.imshow((cur_pca_features * 255).astype(np.uint8))
+        fig.add_subplot(1, 2, 1)
+        cur_pca_features = cur_pca_features.reshape(16, 16, 3)
+        for i in range(3):
+            cur_pca_features[:, :, i] *= pca_mask
+        plt.imshow((cur_pca_features * 255).astype(np.uint8))
 
-    #     fig.add_subplot(1, 2, 2)
-    #     img = load_image(path, normalize=False).permute(1, 2, 0).detach().cpu().numpy()
-    #     # img[:, img_mask] = 0
-    #     for i in range(3):
-    #         img[:, :, i] *= img_mask
+        fig.add_subplot(1, 2, 2)
+        img = load_image(path, normalize=False).permute(1, 2, 0).detach().cpu().numpy()
+        for i in range(3):
+            img[:, :, i] *= img_mask
 
-    #     plt.imshow((img * 255).astype(np.uint8))
+        img = Image.fromarray((img * 255).astype(np.uint8))
+        subdir = path.split("/")[-2]
+        filename = path.split("/")[-1]
+        if not os.path.exists(f"../data_soft_masked/{subdir}"):
+            os.makedirs(f"../data_soft_masked/{subdir}")
+        img.save(f"../data_soft_masked/{subdir}/{filename}")
+        # plt.imshow((img * 255).astype(np.uint8))
 
-    #     plt.show()
+        # plt.show()
 
 
 

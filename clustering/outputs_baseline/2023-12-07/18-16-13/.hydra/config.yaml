@@ -1,0 +1,2 @@
+n_clusters: 16
+embedding_type: cls_token
