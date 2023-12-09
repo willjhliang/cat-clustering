@@ -3,12 +3,12 @@ n_clusters: 16
 n_estimated_neighbors: 10
 
 epochs: 100
-lr: 0.0001
+lr: 0.001
 batch_size: 64
-loss: "scan"  # One of scan, ce
+loss: "scan"  # One of scan, supervised
 scan_entropy_weight: 1.0
 
-embedding_type: "cls_tokens"  # One of the files in embeddings/
+embedding_type: "zoom_cls_token"  # One of cls_token, zoom_cls_token, patch_tokens, soft_masked_patch_tokens
 
 
 hydra:

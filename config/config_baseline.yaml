@@ -1,6 +1,6 @@
 
 n_clusters: 16
-embedding_type: "cls_tokens"  # One of the files in embeddings/
+embedding_type: "zoom_cls_token"  # Check config.yaml for options
 
 hydra:
   # job:

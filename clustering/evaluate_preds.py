@@ -8,7 +8,7 @@ from utils import plot_correctness, load_embeddings, load_predictions
 
 def evaluate_preds(embeddings, labels, preds):
     labels, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
-    # top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
+    top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
     # print(preds.shape)
     # preds_arg = np.random.random_sample(preds_arg.shape)
     # preds_arg = preds_arg * (preds.shape[1])
@@ -28,10 +28,16 @@ def evaluate_preds(embeddings, labels, preds):
         true_mask = labels == i
         total += preds_arg[true_mask & match].shape[0] / np.sum(true_mask) / n_clusters
 
-    print(f"Accuracy (weighted): {total}")
-    print(f"Accuracy: {np.sum(match) / match.shape[0]}")
+    print(f"Accuracy (normalized): {total}")
+    print(f"Accuracy (raw): {np.sum(match) / match.shape[0]}")
 
-    # plot_correctness(embeddings, labels, preds_arg, match)
+    plot_correctness(embeddings, labels, preds_arg, match)
+
+def f(a,N):
+    mask = np.empty(a.size,bool)
+    mask[:N] = True
+    np.not_equal(a[N:],a[:-N],out=mask[N:])
+    return mask
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,6 +46,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
     embeddings, labels, _ = load_embeddings(args.embedding_type)
+    # Test class imbalance
+    # mask = f(np.argmax(labels, axis=1), 128)
+    # embeddings = embeddings[mask]
+    # labels = labels[mask]
     preds = load_predictions(args.filename)
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

@@ -92,16 +92,21 @@ def run(cfg):
 
     embeddings, labels, _ = load_embeddings(embedding_type)
     video_embeddings, video_labels, _ = load_video_embeddings()
-    video_embeddings, video_embeddings = np.zeros((0,)), np.zeros((0,))
+    video_embeddings, video_labels = np.zeros((0,)), np.zeros((0,))
     cls_tokens, _, _ = load_embeddings("cls_tokens")
     # embeddings, labels = embeddings[:512], labels[:512]
 
-    # mask = f(np.argmax(labels, axis=1), 200)
-    # embeddings_alt = embeddings[mask]
-    # labels_alt = labels[mask]
+    full_dataset = EmbeddingDataset(embedding_type, embeddings, labels, embeddings, n_neighbors=n_neighbors)
+
+    mask = f(np.argmax(labels, axis=1), 128)
+    embeddings = embeddings[mask]
+    labels = labels[mask]
+    cls_token = embeddings
 
     model = None
-    if embedding_type == "cls_tokens":
+    if embedding_type == "cls_token":
+        model = ClusterModel(n_clusters=n_clusters).to(device)
+    if embedding_type == "zoom_cls_token":
         model = ClusterModel(n_clusters=n_clusters).to(device)
     elif embedding_type == "patch_tokens":
         model = ClusterPatchModel(n_clusters=n_clusters).to(device)

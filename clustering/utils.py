@@ -41,6 +41,28 @@ def get_transform(normalize=True):
     ])
     return transform
 
+def get_transform_big(normalize=True):
+    transform = T.Compose([
+        T.Resize(896),
+        T.CenterCrop(896),
+        T.ToTensor(),
+        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)) if normalize else lambda x: x
+    ])
+    return transform
+
+def load_image(path, normalize=True):
+    transform = get_transform(normalize=normalize)
+    img = open_image(path)
+    img_tensor = transform(img)
+
+    return img_tensor
+
+def load_image_big(path, normalize=True):
+    transform = get_transform_big(normalize=normalize)
+    img = open_image(path)
+    img_tensor = transform(img)
+
+    return img_tensor
 
 def plot_correctness(embeddings, labels_true, labels_pred, match, top=None):    
     embeddings = normalize_embeddings(embeddings)
@@ -110,6 +132,8 @@ def load_dino():
 def load_embeddings(embedding_type):
     if embedding_type == "cls_tokens":
         filename = "../embeddings/cls_tokens.npz"
+    elif embedding_type == "zoom_cls_token":
+        filename = "../embeddings/zoom_cls_tokens.npz"
     elif embedding_type == "cls_tokens_masked_hard":
         filename = "../embeddings/cls_tokens_masked_hard.npz"
     elif embedding_type == "cls_tokens_masked_soft":
@@ -164,15 +188,8 @@ def save_model(model, save_dir=""):
 def load_model(model, filename):
     model.load_state_dict(torch.load(filename))
 
-def save_output(preds, save_dir=""):
-    np.save(f"{save_dir}/predictions.npy", preds)
-
-def load_image(path, normalize=True):
-    transform = get_transform(normalize=normalize)
-    img = open_image(path)
-    img_tensor = transform(img)
-
-    return img_tensor
+def save_output(preds, save_dir="", filename="predictions"):
+    np.save(f"{save_dir}/{filename}.npy", preds)
 
 def save_img(img, filepath=""):
     if isinstance(img, np.ndarray):

@@ -65,6 +65,8 @@ class EmbeddingDataset(torch.utils.data.Dataset):
     def reshape_embedding(self, embedding):
         if self.embedding_type == "cls_tokens":
             return embedding
+        elif self.embedding_type == "zoom_cls_token":
+            return embedding
         elif self.embedding_type == "patch_tokens":
             return embedding.reshape(16, 16, 1024).permute(2, 0, 1)
         else:
@@ -74,7 +76,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
 class SCANLoss(nn.Module):
     """SCAN: Learning to Classify Images without Labels, ECCV 2020"""
 
-    def __init__(self, entropy_weight):
+    def __init__(self, entropy_weight = 1.0):
         super(SCANLoss, self).__init__()
         self.softmax = nn.Softmax(dim=1)
         self.bce = nn.BCELoss()
