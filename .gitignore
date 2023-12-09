@@ -14,5 +14,6 @@ dist/
 
 embeddings/
 *.mp4
+*.sh
 clustering/outputs/
 clustering/outputs_baseline/
