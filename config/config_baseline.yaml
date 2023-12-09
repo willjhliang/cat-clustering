@@ -1,6 +1,6 @@
 
 n_clusters: 16
-embedding_type: "cls_token"  # Check config.yaml for options
+embedding_type: "cls_tokens"  # One of the files in embeddings/
 
 hydra:
   # job:

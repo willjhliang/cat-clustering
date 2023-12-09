@@ -12,7 +12,7 @@ from tqdm import tqdm
 from utils import load_embeddings, load_image
 
 def plot_patches():
-    embeddings = load_embeddings("../embeddings/masked_patches.npz")
+    embeddings = load_embeddings("patch_tokens")
     masked_patches, masks, all_patches, all_labels, paths = embeddings["embeddings"], embeddings["masks"], embeddings["unmasked_embeddings"], embeddings["labels"], embeddings["img_paths"]
 
     # Convert all_patches to RGB for visualization

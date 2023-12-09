@@ -18,15 +18,16 @@ device = torch.device(device)
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--visualize", action="store_true", help="visualize result instead of saving file")
-    parser.add_argument("--global_norm", action="store_true", help="if soft mask, normalize mask globally instead of per image")
-    parser.add_argument("--threshold", type=float, default=0.7, help="if hard mask, blackout threshold")
+    parser.add_argument("--global_norm", action="store_true", help="for soft mask, normalize mask globally instead of per image")
+    parser.add_argument("--threshold", type=float, default=0.7, help="for hard mask, blackout threshold")
     parser.add_argument("--data_size", type=int, default=0, help="number of images to use")
     args = parser.parse_args()
 
     dino = load_dino()
 
     data_size = args.data_size if args.data_size > 0 else None
-    all_cls, all_patches, all_labels, paths = run_dino_batched(dino, "../data", data_size=data_size)
+    # all_cls, all_patches, all_labels, paths = run_dino_batched(dino, "../data", data_size=data_size)
+    all_patches, all_labels, paths = load_embeddings("patch_tokens")
 
     features = all_patches
     flattened_features = np.reshape(features, (-1, 1024))

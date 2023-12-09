@@ -13,10 +13,10 @@ from utils import *
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 device = torch.device(device)
 
-def load_data(dir, size=None):
+def load_data(data_dir, size=None):
     paths = []
     for extension in ["jpg", "jpeg", "png"]:
-        for filename in glob(os.path.join(dir, f"**/*.{extension}"), recursive=True):
+        for filename in glob(os.path.join(data_dir, f"**/*.{extension}"), recursive=True):
             paths.append(filename)
     if size is not None:
         paths = np.random.choice(paths, size, replace=False)
@@ -95,7 +95,7 @@ def run_dino_batched(dino, data_dir, batch_size=64, data_size=None):
         all_patches.append(batch_patches)
         all_labels.extend(labels)
     
-    unique_categories = list(set(all_labels))
+    unique_categories = sorted(list(set(all_labels)))
     one_hot_vectors = []
     for label in all_labels:
         one_hot_vector = [1 if label == i else 0 for i in unique_categories]
@@ -110,128 +110,48 @@ def run_dino_batched(dino, data_dir, batch_size=64, data_size=None):
 
 
 def extract_cls(dino, data_dir, batch_size=64, data_size=None):
-    all_cls, _, all_labels, paths = run_dino_batched(dino, data_dir, batch_size=batch_size)
+    all_cls, _, all_labels, paths = run_dino_batched(dino, data_dir, batch_size=batch_size, data_size=data_size)
+    np.savez("../embeddings/data_videos/cls_tokens.npz", embeddings=all_cls, labels=all_labels, img_paths=paths)
     return all_cls, all_labels, paths
 
 def extract_patches(dino, data_dir, batch_size=64, data_size=None):
-    _, all_patches, all_labels, paths = run_dino_batched(dino, data_dir, batch_size=batch_size)
+    _, all_patches, all_labels, paths = run_dino_batched(dino, data_dir, batch_size=batch_size, data_size=data_size)
+    np.savez("../embeddings/patches.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
     return all_patches, all_labels, paths
 
-def extract_masked_patches(dino, data_dir, batch_size=64, data_size=None):
-    _, all_patches, all_labels, paths = run_dino_batched(dino, data_dir, batch_size=batch_size, data_size=data_size)
-
+def extract_masked_patches():
+    all_patches, all_labels, paths = load_embeddings("patch_tokens")
     flattened_features = np.reshape(all_patches, (-1, 1024))
     pca = PCA(n_components=3)
     pca.fit(flattened_features)
     pca_features = pca.transform(flattened_features)
     pca_features = np.reshape(pca_features, (-1, 256, 3))
-    masks = (pca_features[:, :, 0] - pca_features[:, :, 0].min()) / (pca_features[:, :, 0].max() - pca_features[:, :, 0].min())
-    masks = masks[:, :, None]
 
-    masked_patches = all_patches * masks
-    return masked_patches, masks, all_patches, all_labels, paths
+    all_masks = pca_features[:, :, 0]
+    hard_masks = all_masks > 0.7
+    soft_global_masks = all_masks.copy()
+    soft_local_masks = all_masks.copy()
+    soft_global_masks = (soft_global_masks - soft_global_masks.min()) / (soft_global_masks.max() - soft_global_masks.min())
+    for i in range(soft_global_masks.shape[0]):
+        soft_global_masks[i] = (soft_global_masks[i] - soft_global_masks[i].min()) / (soft_global_masks[i].max() - soft_global_masks[i].min())
+
+    hard_masked_patches = all_patches * hard_masks[:, :, None]
+    soft_global_masked_patches = all_patches * soft_global_masks[:, :, None]
+    soft_local_masked_patches = all_patches * soft_local_masks[:, :, None]
+
+    all_zero = np.sum(hard_masked_patches, axis=(1, 2)) == 0
+    np.savez("../embeddings/patch_tokens_hard_masked.npz", embeddings=hard_masked_patches[~all_zero], masks=hard_masks[~all_zero], labels=all_labels[~all_zero], img_paths=paths[~all_zero])
+    np.savez("../embeddings/patch_tokens_soft_global_masked.npz", embeddings=soft_global_masked_patches, masks=soft_global_masks, labels=all_labels, img_paths=paths)
+    np.savez("../embeddings/patch_tokens_soft_local_masked.npz", embeddings=soft_local_masked_patches, masks=soft_local_masks, labels=all_labels, img_paths=paths)
+
+    return hard_masked_patches, soft_global_masked_patches, soft_local_masked_patches, hard_masks, soft_global_masks, soft_local_masks, all_labels, paths
 
 
 def main():
     dino = load_dino()
-
-    # inputs, labels, paths = load_data("../data", size=None)
-
-    # cls_embeddings, labels, paths = extract_cls(dino, "../data", batch_size=64, data_size=None)
-    # np.savez("../embeddings/cls_tokens.npz", embeddings=cls_embeddings, labels=labels, img_paths=paths)
-    # masked_patches, masks, all_patches, all_labels, paths = extract_masked_patches(dino, "../data", batch_size=64, data_size=None)
-    # all_patches, all_labels, paths = extract_patches(dino, "../data", batch_size=64, data_size=None)
-
-    # Code to save embeddings as npy file
-    # np.savez("../embeddings/masked_patches.npz", embeddings=masked_patches, masks=masks, unmasked_embeddings=all_patches, labels=all_labels, img_paths=paths)
-    # np.savez("../embeddings/patches.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
-
-
-
-
-
-    # SCRATCH CODE STARTS HERE
-
-    dirpath = "../data"
-    paths = []
-    for subdir, _, files in os.walk(dirpath):
-        paths.extend([os.path.join(subdir, file) for file in files])
-    paths = np.random.choice(paths, 10, replace=False)
-
-    imgs = [load_image(path) for path in paths]
-    data = torch.stack(imgs)
-    print(data.shape)
-
-    ##################################################################
-    batch_size = 64
-    num_data = data.shape[0]
-    num_batches = (num_data + batch_size - 1) // batch_size
-
-    # initialize an empty array to store the predictions
-    all_predictions = []
-
-    # process the data in batches1
-    for batch_index in tqdm(range(num_batches)):
-        start = batch_index * batch_size
-        end = min((batch_index + 1) * batch_size, num_data)
-        batch_inputs = data[start:end].to(device)
-
-        # run predictions on the current batch
-        with torch.no_grad():
-            # batch_predictions = dino(batch_inputs).detach().cpu().numpy()
-            batch_predictions = dino.forward_features(batch_inputs)["x_norm_patchtokens"].detach().cpu().numpy()
-
-        all_predictions.append(batch_predictions)
-
-    # concatenate the predictions from all batches
-    predictions = np.concatenate(all_predictions, axis=0)
-    ##################################################################
-
-    features = predictions
-    flattened_features = np.reshape(features, (-1, 1024))
-
-    pca = PCA(n_components=3)
-    pca.fit(flattened_features)
-    pca_features = pca.transform(flattened_features)
-    pca_features = np.reshape(pca_features, (-1, 256, 3))
-
-    # pca_features = (pca_features - pca_features[:, :, 0].min()) / (pca_features[:, :, 0].max() - pca_features[:, :, 0].min())
-
-    for i, path in enumerate(paths):
-        cur_pca_features = pca_features[i]
-
-        mask = cur_pca_features[:, 0].reshape(16, 16)
-        mask = (mask - mask.min()) / (mask.max() - mask.min())  # Per-image normalization
-        # mask = cur_pca_features[:, 0] < 0.67
-        pca_mask = mask
-        img_mask = mask.repeat(14, axis=0).repeat(14, axis=1)
-
-        # For visualization purposes only, to display full RGB spectrum
-        cur_pca_features = (cur_pca_features - cur_pca_features.min()) / (cur_pca_features.max() - cur_pca_features.min())
-
-        # Plot figure
-        fig = plt.figure()
-
-        fig.add_subplot(1, 2, 1)
-        cur_pca_features = cur_pca_features.reshape(16, 16, 3)
-        for i in range(3):
-            cur_pca_features[:, :, i] *= pca_mask
-        plt.imshow((cur_pca_features * 255).astype(np.uint8))
-
-        fig.add_subplot(1, 2, 2)
-        img = load_image(path, normalize=False).permute(1, 2, 0).detach().cpu().numpy()
-        for i in range(3):
-            img[:, :, i] *= img_mask
-
-        img = Image.fromarray((img * 255).astype(np.uint8))
-        subdir = path.split("/")[-2]
-        filename = path.split("/")[-1]
-        if not os.path.exists(f"../data_soft_masked/{subdir}"):
-            os.makedirs(f"../data_soft_masked/{subdir}")
-        img.save(f"../data_soft_masked/{subdir}/{filename}")
-        # plt.imshow((img * 255).astype(np.uint8))
-
-        # plt.show()
+    extract_cls(dino, "../data_videos", batch_size=64, data_size=None)
+    # extract_patches(dino, "../data", batch_size=64, data_size=None)
+    # extract_masked_patches()
 
 
 

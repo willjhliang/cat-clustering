@@ -35,11 +35,11 @@ def evaluate_preds(embeddings, labels, preds):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--embedding_type", type=str)
-    parser.add_argument("-f", "--filename", type=str)
+    parser.add_argument("-e", "--embedding_type", type=str, required=True, help="embedding type, one of the names in embeddings/")
+    parser.add_argument("-f", "--filename", type=str, required=True, help="filename for cluster predictions")
     args = parser.parse_args()
     # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
-    embeddings, labels = load_embeddings(args.embedding_type)
-    preds = load_predictions(args.preds_filename)
+    embeddings, labels, _ = load_embeddings(args.embedding_type)
+    preds = load_predictions(args.filename)
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

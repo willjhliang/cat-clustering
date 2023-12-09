@@ -13,3 +13,6 @@ dist/
 .DS_STORE
 
 embeddings/
+*.mp4
+clustering/outputs/
+clustering/outputs_baseline/

@@ -4,24 +4,15 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from utils import get_neighbors
+from utils import get_estimated_neighbors, get_true_neighbors, load_embeddings
 
 class ClusterModel(nn.Module):
     def __init__(self, n_clusters):
         super(ClusterModel, self).__init__()
-
-        # self.linear1 = nn.Linear(1024, 1024)
-        # self.relu1 = nn.ReLU()
-        # self.dropout1 = nn.Dropout(p=0.5)
-        self.linear2 = nn.Linear(1024, n_clusters)
-        self.softmax = nn.Softmax(dim=1)
+        self.linear = nn.Linear(1024, n_clusters)
     
     def forward(self, x):
-        # x = self.linear1(x)
-        # x = self.relu1(x)
-        # x = self.dropout1(x)
-        x = self.linear2(x)
-        x = self.softmax(x)
+        x = self.linear(x)
         return x
 
 class ClusterPatchModel(nn.Module):
@@ -39,7 +30,6 @@ class ClusterPatchModel(nn.Module):
 
         self.model_linear = nn.Sequential(
             nn.Linear(4096, n_clusters),
-            nn.Softmax(dim=1)
         )
         
     def forward(self, x):
@@ -49,14 +39,15 @@ class ClusterPatchModel(nn.Module):
         return x
 
 class EmbeddingDataset(torch.utils.data.Dataset):
-    def __init__(self, embedding_type, embeddings, labels, cls_token, n_neighbors=10):
+    def __init__(self, embedding_type, embeddings, labels, n_neighbors=10):
         super(EmbeddingDataset, self).__init__()
         self.embedding_type = embedding_type
 
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels)
         self.n_neighbors = n_neighbors
-        self.neighbor_indices = get_neighbors(torch.tensor(cls_token), self.n_neighbors)
+        cls_tokens, _, _ = load_embeddings("cls_tokens")
+        self.neighbor_indices = get_estimated_neighbors(torch.tensor(cls_tokens), self.n_neighbors)
 
     def __len__(self):
         return len(self.embeddings)
@@ -72,7 +63,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
         return embedding, neighbor, embedding_label, neighbor_label
     
     def reshape_embedding(self, embedding):
-        if self.embedding_type == "cls_token":
+        if self.embedding_type == "cls_tokens":
             return embedding
         elif self.embedding_type == "patch_tokens":
             return embedding.reshape(16, 16, 1024).permute(2, 0, 1)
@@ -83,10 +74,11 @@ class EmbeddingDataset(torch.utils.data.Dataset):
 class SCANLoss(nn.Module):
     """SCAN: Learning to Classify Images without Labels, ECCV 2020"""
 
-    def __init__(self, entropy_weight = 2.0):
+    def __init__(self, entropy_weight):
         super(SCANLoss, self).__init__()
+        self.softmax = nn.Softmax(dim=1)
         self.bce = nn.BCELoss()
-        self.entropy_weight = entropy_weight # Default = 2.0
+        self.entropy_weight = entropy_weight
     
     def entropy(self, x, input_as_probabilities):
         """ 
@@ -112,14 +104,16 @@ class SCANLoss(nn.Module):
     def forward(self, anchors, neighbors):
         # Softmax
         b, n = anchors.size()
+        anchors_prob = self.softmax(anchors)
+        positives_prob = self.softmax(neighbors)
        
         # Similarity in output space
-        similarity = torch.bmm(anchors.view(b, 1, n), neighbors.view(b, n, 1)).squeeze()
+        similarity = torch.bmm(anchors_prob.view(b, 1, n), positives_prob.view(b, n, 1)).squeeze()
         ones = torch.ones_like(similarity)
         consistency_loss = self.bce(similarity, ones)
         
         # Entropy loss
-        entropy_loss = self.entropy(torch.mean(anchors, 0), input_as_probabilities = True)
+        entropy_loss = self.entropy(torch.mean(anchors_prob, 0), input_as_probabilities = True)
 
         # Total loss
         total_loss = consistency_loss - self.entropy_weight * entropy_loss
