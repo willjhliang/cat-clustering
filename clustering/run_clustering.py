@@ -91,17 +91,17 @@ def run(cfg):
     embedding_type = cfg.embedding_type
 
     embeddings, labels, _ = load_embeddings(embedding_type)
-    video_embeddings, video_labels, _ = load_video_embeddings()
-    video_embeddings, video_labels = np.zeros((0,)), np.zeros((0,))
-    cls_tokens, _, _ = load_embeddings("cls_tokens")
-    # embeddings, labels = embeddings[:512], labels[:512]
+    # video_embeddings, video_labels, _ = load_video_embeddings()
+    # video_embeddings, video_labels = np.zeros((0,)), np.zeros((0,))
+    # cls_tokens, _, _ = load_embeddings("zoom_cls_token" if embedding_type == "zoom_cls_token" else "cls_tokens")
+    cls_tokens = embeddings
 
-    full_dataset = EmbeddingDataset(embedding_type, embeddings, labels, embeddings, n_neighbors=n_neighbors)
-
-    mask = f(np.argmax(labels, axis=1), 128)
-    embeddings = embeddings[mask]
-    labels = labels[mask]
-    cls_token = embeddings
+    # Test class imbalance
+    # full_dataset = EmbeddingDataset(embedding_type, embeddings, labels, embeddings, n_neighbors=n_neighbors)
+    # mask = f(np.argmax(labels, axis=1), 128)
+    # embeddings = embeddings[mask]
+    # labels = labels[mask]
+    # cls_token = embeddings
 
     model = None
     if embedding_type == "cls_token":
@@ -111,7 +111,7 @@ def run(cfg):
     elif embedding_type == "patch_tokens":
         model = ClusterPatchModel(n_clusters=n_clusters).to(device)
     else:
-        raise NotImplementedError
+        model = ClusterModel(n_clusters=n_clusters).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # dataset = EmbeddingDataset(embedding_type, embeddings, labels, video_embeddings, video_labels, n_estimated_neighbors)

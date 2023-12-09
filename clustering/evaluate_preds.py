@@ -9,6 +9,7 @@ from utils import plot_correctness, load_embeddings, load_predictions
 def evaluate_preds(embeddings, labels, preds):
     labels, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
     top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
+    # Random baseline
     # print(preds.shape)
     # preds_arg = np.random.random_sample(preds_arg.shape)
     # preds_arg = preds_arg * (preds.shape[1])
@@ -45,11 +46,20 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--filename", type=str, required=True, help="filename for cluster predictions")
     args = parser.parse_args()
     # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
+
     embeddings, labels, _ = load_embeddings(args.embedding_type)
+    # bengals only full model
+    # labels_arg = np.argmax(labels, axis=1)
+    # mask = (labels_arg == 4) | (labels_arg == 5) | (labels_arg == 7) | (labels_arg == 8) | (labels_arg == 9) | (labels_arg == 13) | (labels_arg == 14)
+    # embeddings = embeddings[mask]
+    # labels = np.delete(labels[mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
+
     # Test class imbalance
     # mask = f(np.argmax(labels, axis=1), 128)
     # embeddings = embeddings[mask]
     # labels = labels[mask]
     preds = load_predictions(args.filename)
+    # bengals only full model
+    # preds = np.delete(preds[mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

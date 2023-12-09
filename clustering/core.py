@@ -46,7 +46,8 @@ class EmbeddingDataset(torch.utils.data.Dataset):
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels)
         self.n_neighbors = n_neighbors
-        cls_tokens, _, _ = load_embeddings("cls_tokens")
+        # cls_tokens, _, _ = load_embeddings("cls_tokens")
+        cls_tokens = embeddings
         self.neighbor_indices = get_estimated_neighbors(torch.tensor(cls_tokens), self.n_neighbors)
 
     def __len__(self):
@@ -70,7 +71,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
         elif self.embedding_type == "patch_tokens":
             return embedding.reshape(16, 16, 1024).permute(2, 0, 1)
         else:
-            raise ValueError("Invalid embedding type")
+            return embedding
 
 
 class SCANLoss(nn.Module):

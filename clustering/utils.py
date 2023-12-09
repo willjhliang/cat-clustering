@@ -50,20 +50,6 @@ def get_transform_big(normalize=True):
     ])
     return transform
 
-def load_image(path, normalize=True):
-    transform = get_transform(normalize=normalize)
-    img = open_image(path)
-    img_tensor = transform(img)
-
-    return img_tensor
-
-def load_image_big(path, normalize=True):
-    transform = get_transform_big(normalize=normalize)
-    img = open_image(path)
-    img_tensor = transform(img)
-
-    return img_tensor
-
 def plot_correctness(embeddings, labels_true, labels_pred, match, top=None):    
     embeddings = normalize_embeddings(embeddings)
 
@@ -79,19 +65,23 @@ def plot_correctness(embeddings, labels_true, labels_pred, match, top=None):
 
     alpha = 1 if top is None else 0.05
 
-    cmap = plt.cm.viridis
+    plt.rcParams["image.cmap"] = "Spectral"
     norm = plt.Normalize(vmin=labels_true.min(), vmax=labels_true.max())
-    axs[0].scatter(output[match][:, 0], output[match][:, 1], marker='o', c=cmap(norm(labels_true[match])), alpha=alpha)
-    axs[0].scatter(output[np.invert(match)][:, 0], output[np.invert(match)][:, 1], marker='x', c=cmap(norm(labels_true[np.invert(match)])), alpha=alpha)
+    scatter0 = axs[0].scatter(output[match][:, 0], output[match][:, 1], marker='o', c=labels_true[match], alpha=alpha)
+    axs[0].scatter(output[np.invert(match)][:, 0], output[np.invert(match)][:, 1], marker='x', c=labels_true[np.invert(match)], alpha=alpha)
     if top is not None:
-        axs[0].scatter(output[top][:, 0], output[top][:, 1], marker='*', c=cmap(norm(labels_true[top])), s=128)
+        axs[0].scatter(output[top][:, 0], output[top][:, 1], marker='*', c=labels_true[top], s=128)
     axs[0].set_title("Colored by ground truth")
+    legend0 = axs[0].legend(*scatter0.legend_elements(num=None), loc="upper right", title="Classes")
+    axs[0].add_artist(legend0)
 
-    axs[1].scatter(output[match][:, 0], output[match][:, 1], marker='o', c=cmap(norm(labels_pred[match])), alpha=alpha)
-    axs[1].scatter(output[np.invert(match)][:, 0], output[np.invert(match)][:, 1], marker='x', c=cmap(norm(labels_pred[np.invert(match)])), alpha=alpha)
+    scatter1 = axs[1].scatter(output[match][:, 0], output[match][:, 1], marker='o', c=labels_pred[match], alpha=alpha)
+    axs[1].scatter(output[np.invert(match)][:, 0], output[np.invert(match)][:, 1], marker='x', c=labels_pred[np.invert(match)], alpha=alpha)
     if top is not None:
-        axs[1].scatter(output[top][:, 0], output[top][:, 1], marker='*', c=cmap(norm(labels_pred[top])), s=128)
+        axs[1].scatter(output[top][:, 0], output[top][:, 1], marker='*', c=labels_pred[top], s=128)
     axs[1].set_title("Colored by predicted")
+    legend1 = axs[1].legend(*scatter1.legend_elements(num=None), loc="upper right", title="Classes")
+    axs[1].add_artist(legend1)
 
     plt.show()
 
@@ -130,25 +120,7 @@ def load_dino():
     return dino
 
 def load_embeddings(embedding_type):
-    if embedding_type == "cls_tokens":
-        filename = "../embeddings/cls_tokens.npz"
-    elif embedding_type == "zoom_cls_token":
-        filename = "../embeddings/zoom_cls_tokens.npz"
-    elif embedding_type == "cls_tokens_masked_hard":
-        filename = "../embeddings/cls_tokens_masked_hard.npz"
-    elif embedding_type == "cls_tokens_masked_soft":
-        filename = "../embeddings/cls_tokens_masked_soft.npz"
-    elif embedding_type == "patch_tokens":
-        filename = "../embeddings/patch_tokens.npz"
-    elif embedding_type == "patch_tokens_hard_masked":
-        filename = "../embeddings/patch_tokens_hard_masked.npz"
-    elif embedding_type == "patch_tokens_soft_global_masked":
-        filename = "../embeddings/patch_tokens_soft_global_masked.npz"
-    elif embedding_type == "patch_tokens_soft_local_masked":
-        filename = "../embeddings/patch_tokens_soft_local_masked.npz"
-    else:
-        raise ValueError(f"Invalid embedding type: {embedding_type}")
-
+    filename = f"../embeddings/{embedding_type}.npz"
     embeddings = np.load(filename)
     return embeddings["embeddings"], embeddings["labels"], embeddings["img_paths"]
 
@@ -190,6 +162,20 @@ def load_model(model, filename):
 
 def save_output(preds, save_dir="", filename="predictions"):
     np.save(f"{save_dir}/{filename}.npy", preds)
+
+def load_image(path, normalize=True):
+    transform = get_transform(normalize=normalize)
+    img = open_image(path)
+    img_tensor = transform(img)
+
+    return img_tensor
+
+def load_image_big(path, normalize=True):
+    transform = get_transform_big(normalize=normalize)
+    img = open_image(path)
+    img_tensor = transform(img)
+
+    return img_tensor
 
 def save_img(img, filepath=""):
     if isinstance(img, np.ndarray):

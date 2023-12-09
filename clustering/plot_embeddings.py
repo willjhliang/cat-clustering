@@ -33,5 +33,5 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--embedding_type", type=str, required=True, help="embedding type, one of the names in embeddings/")
     args = parser.parse_args()
 
-    embeddings, labels = load_embeddings(args.embedding_type)
+    embeddings, labels, _ = load_embeddings(args.embedding_type)
     plot_embeddings(embeddings, labels)
