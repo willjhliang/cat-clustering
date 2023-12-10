@@ -1,5 +1,7 @@
 # Individual Cat Clustering
 
+<p align="center"> <img src="assets/cls_tokens_intermediates.gif" width="400"> </p>
+
 ## Dataset
 We aggregated cat images from Instagram accounts, totaling 16 individual cats across 10k images.
 

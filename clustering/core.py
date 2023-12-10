@@ -44,7 +44,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
         self.embedding_type = embedding_type
 
         self.embeddings = torch.tensor(embeddings)
-        self.labels = torch.tensor(labels)
+        self.labels = torch.tensor(labels).int()
         self.n_neighbors = n_neighbors
         # cls_tokens, _, _ = load_embeddings("cls_tokens")
         cls_tokens = embeddings

@@ -32,7 +32,7 @@ def evaluate_preds(embeddings, labels, preds):
     print(f"Accuracy (normalized): {total}")
     print(f"Accuracy (raw): {np.sum(match) / match.shape[0]}")
 
-    plot_correctness(embeddings, labels, preds_arg, match)
+    # plot_correctness(embeddings, labels, preds_arg, match)
 
 def f(a,N):
     mask = np.empty(a.size,bool)

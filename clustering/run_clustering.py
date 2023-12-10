@@ -63,12 +63,13 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
             # epoch_recalls.append(recall)
 
         if epoch % 25 == 0:
-            print(f"Epoch {epoch}")
-            print(f"Loss: {np.mean(epoch_losses)}")
+            # print(f"Epoch {epoch}")
+            # print(f"Loss: {np.mean(epoch_losses)}")
             # print(f"Accuracy: {np.mean(epoch_accuracies)}")
             # print(f"Precision: {np.mean(epoch_precisions)}")
             # print(f"Recall: {np.mean(epoch_recalls)}")
-            print()
+            # print()
+            pass
 
     return model
 
