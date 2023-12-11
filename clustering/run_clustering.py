@@ -73,12 +73,6 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
 
     return model
 
-def f(a,N):
-    mask = np.empty(a.size,bool)
-    mask[:N] = True
-    np.not_equal(a[N:],a[:-N],out=mask[N:])
-    return mask
-
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def run(cfg):
     output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -97,17 +91,10 @@ def run(cfg):
     # cls_tokens, _, _ = load_embeddings("zoom_cls_token" if embedding_type == "zoom_cls_token" else "cls_tokens")
     cls_tokens = embeddings
 
-    # Test class imbalance
-    # full_dataset = EmbeddingDataset(embedding_type, embeddings, labels, embeddings, n_neighbors=n_neighbors)
-    # mask = f(np.argmax(labels, axis=1), 128)
-    # embeddings = embeddings[mask]
-    # labels = labels[mask]
-    # cls_token = embeddings
-
     model = None
     if embedding_type == "cls_token":
         model = ClusterModel(n_clusters=n_clusters).to(device)
-    if embedding_type == "zoom_cls_token":
+    if embedding_type == "zoom_cls_tokens":
         model = ClusterModel(n_clusters=n_clusters).to(device)
     elif embedding_type == "patch_tokens":
         model = ClusterPatchModel(n_clusters=n_clusters).to(device)
@@ -129,20 +116,14 @@ def run(cfg):
     save_model(model, save_dir=output_dir)
 
     preds = []
-    # embeddings = []
-    # labels = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     for _, (cur_embeddings, _, cur_labels, _) in enumerate(dataloader):
         cur_embeddings = cur_embeddings.to(device)
-        # embeddings.append(cur_embeddings.detach().cpu())
         preds.append(model(cur_embeddings).detach().cpu())
-    #     labels.append(cur_labels.detach().cpu())
-    # embeddings = np.concatenate(embeddings, axis=0)
-    # labels = np.concatenate(labels, axis=0)
+
 
     preds = np.concatenate(preds, axis=0)
     save_output(preds, save_dir=output_dir)
-
     evaluate_preds(embeddings, labels, preds)
 
 if __name__ == "__main__":

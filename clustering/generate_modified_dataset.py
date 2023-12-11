@@ -7,7 +7,7 @@ def generate_species_dataset():
     embeddings, labels, paths = data['embeddings'], data['labels'], data['img_paths']
 
     # Harcoded based on alphabetical species order in README
-    cat_to_species = [3, 6, 2, 4, 0, 0, 4, 0, 0, 0, 5, 7, 2, 0, 0, 2]
+    cat_to_species = [3, 6, 2, 4, 0, 0, 4, 0, 0, 0, 5, 7, 1, 0, 0, 2]
 
     new_labels = np.zeros((labels.shape[0], max(cat_to_species)+1))
     for i in range(labels.shape[0]):
@@ -35,6 +35,6 @@ def generate_bengal_dataset():
     np.savez("../embeddings/cls_tokens_bengal.npz", embeddings=new_embeddings, labels=new_labels, img_paths=new_paths)
 
 if __name__ == "__main__":
-    # generate_species_dataset()
-    generate_bengal_dataset()
+    generate_species_dataset()
+    # generate_bengal_dataset()
 

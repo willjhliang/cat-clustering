@@ -32,34 +32,41 @@ def evaluate_preds(embeddings, labels, preds):
     print(f"Accuracy (normalized): {total}")
     print(f"Accuracy (raw): {np.sum(match) / match.shape[0]}")
 
-    # plot_correctness(embeddings, labels, preds_arg, match)
-
-def f(a,N):
-    mask = np.empty(a.size,bool)
-    mask[:N] = True
-    np.not_equal(a[N:],a[:-N],out=mask[N:])
-    return mask
+    plot_correctness(embeddings, labels, preds_arg, match)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--embedding_type", type=str, required=True, help="embedding type, one of the names in embeddings/")
     parser.add_argument("-f", "--filename", type=str, required=True, help="filename for cluster predictions")
     args = parser.parse_args()
-    # embeddings, preds, labels = output["embeddings"], output["preds"], output["labels"]
 
     embeddings, labels, _ = load_embeddings(args.embedding_type)
-    # bengals only full model
-    # labels_arg = np.argmax(labels, axis=1)
-    # mask = (labels_arg == 4) | (labels_arg == 5) | (labels_arg == 7) | (labels_arg == 8) | (labels_arg == 9) | (labels_arg == 13) | (labels_arg == 14)
-    # embeddings = embeddings[mask]
-    # labels = np.delete(labels[mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
-
-    # Test class imbalance
-    # mask = f(np.argmax(labels, axis=1), 128)
-    # embeddings = embeddings[mask]
-    # labels = labels[mask]
     preds = load_predictions(args.filename)
-    # bengals only full model
-    # preds = np.delete(preds[mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
+
+    # Filter for bengals
+    # bengal_cats = [4, 5, 7, 8, 9, 13, 14]
+    # row_mask = np.zeros(labels.shape[0], dtype=bool)
+    # for i in bengal_cats:
+    #     row_mask = np.logical_or(row_mask, labels[:, i] == 1)
+
+    # embeddings = embeddings[row_mask]    
+    # labels = np.delete(labels[row_mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
+    # preds = np.delete(preds[row_mask], [0, 1, 2, 3, 6, 10, 11, 12, 15], axis=1)
+
+    # Filter for species
+    # cat_to_species = [3, 6, 2, 4, 0, 0, 4, 0, 0, 0, 5, 7, 1, 0, 0, 2]
+
+    # new_labels = np.zeros((labels.shape[0], max(cat_to_species)+1))
+    # for i in range(labels.shape[0]):
+    #     cat = np.argmax(labels[i])
+    #     new_labels[i, cat_to_species[cat]] = 1
+    # labels = new_labels
+
+    # new_preds = np.zeros((preds.shape[0], max(cat_to_species)+1))
+    # for i in range(preds.shape[0]):
+    #     cat = np.argmax(preds[i])
+    #     new_preds[i, cat_to_species[cat]] = 1
+    # pred = new_preds
+    
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)

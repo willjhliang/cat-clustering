@@ -32,39 +32,21 @@ def get_neighbor_correctness(embeddings, labels, max_neighbors=50):
     
 
 def main():
-    embeddings, labels = load_embeddings()
+    embeddings, labels, _ = load_embeddings("cls_tokens")
     embeddings = torch.tensor(embeddings).to(device)
     labels = torch.tensor(labels).to(device)
 
     n_neighbors, correctness = get_neighbor_correctness(embeddings, labels)
-    cnts = torch.sum(labels, dim=0).cpu().numpy()
-
-    # for i, row in enumerate(correctness):
-    #     plt.plot(n_neighbors, row, label=f"Cat {i} ({cnts[i].item()} data points)")
-
-    # plt.legend()
-    # plt.xlabel("Number of nearest neighbors")
-    # plt.ylabel("Percent neighbors correct [%]")
-    # plt.ylim([0, 1])
-    # plt.show()
 
     # Create a figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    plt.rcParams["image.cmap"] = "Spectral"
 
     for i, row in enumerate(correctness):
-        ax1.plot(n_neighbors, row, label=f"Cat {i}", color=colors[i])
-    ax1.set_xlabel("Number of nearest neighbors")
-    ax1.set_ylabel("Percent neighbors correct [%]")
-    ax1.set_ylim([0, 1])
-    ax1.legend()
-
-    ax2.bar(np.arange(len(cnts)), cnts, color=colors[:len(cnts)])
-    ax2.set_xlabel('Cat ID')
-    ax2.set_ylabel('Number of pictures')
-
-    # Adjust layout to prevent clipping of titles
-    plt.tight_layout()
+        plt.plot(n_neighbors, row, label=f"{i}")
+    plt.xlabel("Number of nearest neighbors")
+    plt.ylabel("Percent neighbors correct [%]")
+    plt.ylim([0, 1])
+    plt.legend(title="Classes")
 
     # Show the plot
     plt.show()

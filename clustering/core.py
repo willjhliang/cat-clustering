@@ -66,7 +66,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
     def reshape_embedding(self, embedding):
         if self.embedding_type == "cls_tokens":
             return embedding
-        elif self.embedding_type == "zoom_cls_token":
+        elif self.embedding_type == "zoom_cls_tokens":
             return embedding
         elif self.embedding_type == "patch_tokens":
             return embedding.reshape(16, 16, 1024).permute(2, 0, 1)
