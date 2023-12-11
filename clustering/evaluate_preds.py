@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # for i in range(preds.shape[0]):
     #     cat = np.argmax(preds[i])
     #     new_preds[i, cat_to_species[cat]] = 1
-    # pred = new_preds
+    # preds = new_preds
     
     # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)
