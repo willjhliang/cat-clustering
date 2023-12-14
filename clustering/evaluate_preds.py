@@ -8,7 +8,6 @@ from utils import plot_correctness, load_embeddings, load_predictions
 
 def evaluate_preds(embeddings, labels, preds):
     labels_arg, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
-    # top = np.argpartition(np.max(preds, axis=1), -32)[-32:] if np.max(preds, axis=1).min() != 1 else None
     
     # Random baseline
     # print(preds.shape)
@@ -74,5 +73,4 @@ if __name__ == "__main__":
     embeddings, labels, _ = load_embeddings(args.embedding_type)
     preds = load_predictions(args.filename)
     
-    # preds, labels = np.load(f"{output_filename}/predictions.npy"), np.load(f"{output_filename}/labels.npy")
     evaluate_preds(embeddings, labels, preds)
