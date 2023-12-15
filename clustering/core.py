@@ -46,9 +46,7 @@ class EmbeddingDataset(torch.utils.data.Dataset):
         self.embeddings = torch.tensor(embeddings)
         self.labels = torch.tensor(labels).int()
         self.n_neighbors = n_neighbors
-        # cls_tokens, _, _ = load_embeddings("cls_tokens")
-        cls_tokens = embeddings
-        self.neighbor_indices = get_estimated_neighbors(torch.tensor(cls_tokens), self.n_neighbors)
+        self.neighbor_indices = get_estimated_neighbors(torch.tensor(embeddings), self.n_neighbors)
 
     def __len__(self):
         return len(self.embeddings)

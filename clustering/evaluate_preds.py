@@ -4,7 +4,7 @@ from scipy import optimize
 import sys
 import argparse
 
-from utils import plot_correctness, load_embeddings, load_predictions
+from utils import load_embeddings, load_predictions
 
 def evaluate_preds(embeddings, labels, preds):
     labels_arg, preds_arg = np.argmax(labels, axis=1), np.argmax(preds, axis=1)
@@ -62,7 +62,8 @@ def evaluate_preds(embeddings, labels, preds):
     print(f"Accuracy (normalized): {total}")
     print(f"Accuracy (raw): {np.sum(match) / match.shape[0]}")
 
-    plot_correctness(embeddings, labels_arg, preds_arg, match)
+    return labels_arg, preds_arg, match
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

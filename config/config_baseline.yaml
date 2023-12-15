@@ -1,10 +1,7 @@
 
 n_clusters: 16
-embedding_type: "zoom_cls_token"  # Check config.yaml for options
+embedding_type: "zoom_cls_tokens"  # Check config.yaml for options
 
 hydra:
-  # job:
-  #   chdir: True
-  
   run:
     dir: ./outputs_baseline/${now:%Y-%m-%d}/${now:%H-%M-%S}

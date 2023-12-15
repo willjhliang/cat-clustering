@@ -18,21 +18,9 @@ device = torch.device(device)
 
 
 def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
-    """
-    TODO IDEA!!!!!!!!!!!!!
-
-    SCAN has two stages: unsupervised clustering with SCANLoss (which we're doing below)
-    and then fine-tuning with self-labeling, which trains the model to sharpen its confident predictions
-
-    What if we alternate these steps? Our novel contribution???
-    """
-
     model.train()
     for epoch in tqdm(range(epochs+1)):
         epoch_losses = []
-        # epoch_accuracies = []
-        # epoch_precisions = []
-        # epoch_recalls = []
 
         for batch_idx, (embeddings, neighbors, embedding_labels, neighbor_labels) in enumerate(dataloader):
             embeddings = embeddings.to(device)
@@ -51,24 +39,11 @@ def train_clustering(model, dataloader, optimizer, criterion, labels, epochs):
             loss.backward()
             optimizer.step()
 
-            # same_cluster_pred = torch.argmax(embeddings_pred, dim=1) == torch.argmax(neighbors_pred, dim=1)
-            # same_cluster_true = torch.argmax(embedding_labels, dim=1) == torch.argmax(neighbor_labels, dim=1)
-            # accuracy = torch.sum(same_cluster_pred == same_cluster_true).item() / len(same_cluster_pred)
-            # precision = torch.sum(same_cluster_pred & same_cluster_true).item() / torch.sum(same_cluster_pred).item()
-            # recall = torch.sum(same_cluster_pred & same_cluster_true).item() / torch.sum(same_cluster_true).item()
-
             epoch_losses.append(loss.item())
-            # epoch_accuracies.append(accuracy)
-            # epoch_precisions.append(precision)
-            # epoch_recalls.append(recall)
 
         if epoch % 25 == 0:
-            # print(f"Epoch {epoch}")
-            # print(f"Loss: {np.mean(epoch_losses)}")
-            # print(f"Accuracy: {np.mean(epoch_accuracies)}")
-            # print(f"Precision: {np.mean(epoch_precisions)}")
-            # print(f"Recall: {np.mean(epoch_recalls)}")
-            # print()
+            print(f"Epoch {epoch}")
+            print(f"Loss: {np.mean(epoch_losses)}")
             pass
 
     return model
@@ -86,28 +61,21 @@ def run(cfg):
     embedding_type = cfg.embedding_type
 
     embeddings, labels, _ = load_embeddings(embedding_type)
-    # video_embeddings, video_labels, _ = load_video_embeddings()
-    # video_embeddings, video_labels = np.zeros((0,)), np.zeros((0,))
-    # cls_tokens, _, _ = load_embeddings("zoom_cls_token" if embedding_type == "zoom_cls_token" else "cls_tokens")
-    cls_tokens = embeddings
 
     model = None
-    if embedding_type == "cls_token":
+    if "cls" in embedding_type:
         model = ClusterModel(n_clusters=n_clusters).to(device)
-    if embedding_type == "zoom_cls_tokens":
-        model = ClusterModel(n_clusters=n_clusters).to(device)
-    elif embedding_type == "patch_tokens":
+    elif "patch" in embedding_type:
         model = ClusterPatchModel(n_clusters=n_clusters).to(device)
     else:
-        model = ClusterModel(n_clusters=n_clusters).to(device)
+        raise NotImplementedError
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # dataset = EmbeddingDataset(embedding_type, embeddings, labels, video_embeddings, video_labels, n_estimated_neighbors)
     dataset = EmbeddingDataset(embedding_type, embeddings, labels, n_estimated_neighbors)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     if loss == "scan":
         criterion = SCANLoss(cfg.scan_entropy_weight)
-    elif loss == "ce":
+    elif loss == "cross_entropy":
         criterion = nn.CrossEntropyLoss()
     else:
         raise NotImplementedError
@@ -124,12 +92,8 @@ def run(cfg):
 
     preds = np.concatenate(preds, axis=0)
     save_output(preds, save_dir=output_dir)
+
     evaluate_preds(embeddings, labels, preds)
 
 if __name__ == "__main__":
     run()
-
-# def run_clustering():
-#     embeddings, labels = load_embeddings()
-#     embeddings = normalize_embeddings(embeddings)
-

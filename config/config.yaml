@@ -8,12 +8,9 @@ batch_size: 64
 loss: "scan"  # One of scan, supervised
 scan_entropy_weight: 1.0
 
-embedding_type: "zoom_cls_token"  # One of cls_token, zoom_cls_token, patch_tokens, soft_masked_patch_tokens
+embedding_type: "zoom_cls_tokens"  # One of cls_tokens, zoom_cls_tokens, patch_tokens
 
 
 hydra:
-#   job:
-#     chdir: True
-  
   run:
     dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

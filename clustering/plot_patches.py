@@ -32,41 +32,6 @@ def plot_patches(embedding_type, iteration_scheme):
     pca_features_global_norm = pca_features.copy()
     pca_features_local_norm = pca_features.copy()
 
-    # target_paths = [
-    #     "../data/thebengalalex/2023-10-01_12-40-13_UTC.jpg",
-    #     "../data/thebengalalex/2023-05-04_16-04-25_UTC_2.jpg",
-    #     "../data/aslantheforestcat/2019-02-08_15-51-11_UTC.jpg",
-    #     "../data/aslantheforestcat/2019-01-30_16-40-22_UTC.jpg",
-    #     "../data/cobythecat/2022-01-22_16-18-59_UTC.jpg",
-    #     "../data/cobythecat/2022-07-14_14-52-43_UTC_2.jpg",
-    #     "../data/fantasticflora/2016-11-05_16-24-18_UTC.jpg",
-    #     "../data/fantasticflora/2016-08-25_05-04-14_UTC.jpg",
-    #     "../data/russianblueleia/2021-01-17_18-54-39_UTC.jpg",
-    #     "../data/russianblueleia/2020-10-09_15-50-42_UTC.jpg",
-    #     "../data/lemon/IMG_7983.jpeg",
-    #     "../data/lemon/IMG_7142.jpeg",
-    #     "../data/luffylittleleopard/2020-11-03_02-30-42_UTC.jpg",
-    #     "../data/luffylittleleopard/2022-08-07_14-19-47_UTC.jpg",
-    #     "../data/manduthebengalcat/2022-08-22_14-11-31_UTC_1.jpg",
-    #     "../data/manduthebengalcat/2023-04-06_16-03-20_UTC_1.jpg",
-    #     "../data/mocha/IMG_7865.jpeg",
-    #     "../data/mocha/IMG_0174.jpeg",
-    #     "../data/nelsonnthecat/2019-01-06_20-11-42_UTC.jpg",
-    #     "../data/nelsonnthecat/2019-01-01_20-01-07_UTC_1.jpg",
-    #     "../data/olivia_bengal/2021-07-20_17-09-24_UTC.jpg",
-    #     "../data/olivia_bengal/2020-05-17_17-44-20_UTC_2.jpg",
-    #     "../data/raythebengalcat/2023-03-22_16-12-37_UTC_1.jpg",
-    #     "../data/raythebengalcat/2023-04-11_14-28-55_UTC.jpg",
-    #     "../data/sterlingsilvercat/2019-09-16_02-05-58_UTC.jpg",
-    #     "../data/sterlingsilvercat/2020-08-01_17-27-36_UTC.jpg",
-    #     "../data/superjoep/2017-11-15_14-43-23_UTC.jpg",
-    #     "../data/superjoep/2020-02-27_15-03-25_UTC.jpg",
-    #     "../data/toki_the_bengal/2022-01-04_17-40-55_UTC.jpg",
-    #     "../data/toki_the_bengal/2022-03-15_16-41-08_UTC.jpg",
-    #     "../data/umasiberian/2022-04-22_19-17-46_UTC_2.jpg",
-    #     "../data/umasiberian/2023-02-10_18-13-56_UTC.jpg"
-    # ]
-
     # Normalize PCA features across all images
     for j in range(3):
         cur_pca_features = pca_features_global_norm[:, :, j]
@@ -111,12 +76,6 @@ def plot_patches(embedding_type, iteration_scheme):
             raise ValueError(f"Invalid iteration scheme: {iteration_scheme}")
         
         path = paths[i]
-        # if len(target_paths) == 0:
-        #     break
-        # if path not in target_paths:
-        #     continue
-        # else:
-        #     target_paths.remove(path)
 
         cur_pca_features_global_norm = pca_features_global_norm[i]
         cur_pca_features_local_norm = pca_features_local_norm[i]
