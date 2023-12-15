@@ -118,6 +118,6 @@ if __name__ == "__main__":
     np.savez("../embeddings/cls_tokens.npz", embeddings=all_cls, labels=all_labels, img_paths=paths)
     for i in range(all_intermediate_cls.shape[1]):
         np.savez(f"../embeddings/cls_tokens_intermediate_{i}.npz", embeddings=all_intermediate_cls[:, i], labels=all_labels, img_paths=paths)
-    # np.savez("../embeddings/patches.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
+    np.savez("../embeddings/patch_tokens.npz", embeddings=all_patches, labels=all_labels, img_paths=paths)
 
-    # extract_masked_patches()
+    extract_masked_patches()
