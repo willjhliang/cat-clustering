@@ -11,7 +11,7 @@ In order to run DINOv2 (for `calculate_embeddings.py`), please first follow the 
 All scripts are in the `clustering/` directory.
 
 ### Embeddings
-We calculate the embeddings of our dataset prior to training to save redundant computations. To generate a new set of embeddings, run `python calculate_embeddings.py`.
+We calculate the embeddings of our dataset prior to training to save redundant computations. The CLS tokens are saved in this repository, but the patch tokens are too large (10 GB). To generate them, run `python calculate_embeddings.py`.
 
 ### Training
 To train a clustering model, run `python run_clustering.py`. The training config is in `config/config.yaml`.
