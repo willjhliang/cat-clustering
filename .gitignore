@@ -12,7 +12,6 @@ dist/
 
 .DS_STORE
 
-embeddings/
 *.mp4
 *.sh
 clustering/outputs/
